@@ -36,6 +36,11 @@ def _discover_subject_sessions(bids_dir):
 subject_sessions = _discover_subject_sessions(bids_dir)
 subjects = list(subject_sessions.keys())
 
+print(f"[longitudinal] bids_dir: {bids_dir}")
+print(f"[longitudinal] Discovered {len(subjects)} subject(s): {subjects}")
+for sub, sessions in subject_sessions.items():
+    print(f"[longitudinal]   sub-{sub}: {len(sessions)} session(s) {sessions}")
+
 
 def get_sessions(subject):
     return subject_sessions.get(subject, [])
