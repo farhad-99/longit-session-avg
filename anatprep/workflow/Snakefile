@@ -9,7 +9,11 @@ import os
 import glob
 
 
-configfile: os.path.join(workflow.basedir, "..", "config", "snakebids.yml")
+_config_path = os.path.normpath(
+    os.path.join(workflow.basedir, "..", "config", "snakebids.yml")
+)
+print(f"[longitudinal] config: {_config_path}")
+configfile: _config_path
 
 
 bids_dir = config["bids_dir"]
