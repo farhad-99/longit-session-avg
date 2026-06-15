@@ -67,8 +67,10 @@ rule trim_and_center:
         import nibabel as nib
         import numpy as np
 
-        logging.basicConfig(filename=log[0], level=logging.INFO)
-        log_msg = logging.info
+        logger = logging.getLogger(f"trim_and_center.{wildcards.subject}.{wildcards.session}.{wildcards.modality}")
+        logger.setLevel(logging.INFO)
+        logger.handlers = [logging.FileHandler(log[0])]
+        log_msg = logger.info
 
         log_msg(f"Loading {input.nii}")
         img = nib.load(input.nii)
@@ -133,8 +135,10 @@ rule build_subject_template:
         import tempfile
         import ants
 
-        logging.basicConfig(filename=log[0], level=logging.INFO)
-        log_msg = logging.info
+        logger = logging.getLogger(f"build_subject_template.{wildcards.subject}.{wildcards.modality}")
+        logger.setLevel(logging.INFO)
+        logger.handlers = [logging.FileHandler(log[0])]
+        log_msg = logger.info
 
         log_msg(f"Building template for sub-{wildcards.subject} {wildcards.modality}")
         log_msg(f"Input images: {input.trimmed}")
@@ -202,8 +206,10 @@ rule register_sessions_to_template:
         import shutil
         import ants
 
-        logging.basicConfig(filename=log[0], level=logging.INFO)
-        log_msg = logging.info
+        logger = logging.getLogger(f"register_sessions_to_template.{wildcards.subject}.{wildcards.session}.{wildcards.modality}")
+        logger.setLevel(logging.INFO)
+        logger.handlers = [logging.FileHandler(log[0])]
+        log_msg = logger.info
 
         log_msg(f"Registering {input.moving} -> {input.fixed}")
 
