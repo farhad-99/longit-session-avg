@@ -15,8 +15,9 @@ configfile: os.path.join(workflow.basedir, "..", "config", "longitudinal_config.
 bids_dir = config["bids_dir"]
 output_dir = config["output_dir"]
 
-# Modality wildcard values (keys of the config dict)
-modalities = list(config["modalities"].keys())
+# {"TOF": "acq-TOF_run-1_angio", "T2w": "run-1_T2w"}
+modality_patterns = config["modalities"]
+modalities = list(modality_patterns.keys())
 
 
 def _discover_subject_sessions(bids_dir):
@@ -44,4 +45,7 @@ wildcard_constraints:
     modality="|".join(modalities),
 
 
-include: "rules/longitudinal.smk"
+include: "rules/longitudinal_all.smk"
+include: "rules/longitudinal_trim.smk"
+include: "rules/longitudinal_template.smk"
+include: "rules/longitudinal_coreg.smk"
