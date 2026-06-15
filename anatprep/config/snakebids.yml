@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
  - participant
@@ -60,16 +61,14 @@ parse_args:
 
 
 #--- workflow specific configuration ---
+=======
+# Configuration for within-subject longitudinal session averaging workflow.
+>>>>>>> 19c8801945d227da11706bbf6012a91733113efd
 
 bids_dir: null
 output_dir: null
-target_template: ABAv3
-template_path_target: null
-# kept so preproc_mri.smk parses without error; brain masking not a target
-template_mri: MouseIn
-mri_resample_percent: 100
 
-templates:
-  MouseIn:
-    anat: 'tpl-MouseIn/tpl-MouseIn_res-1_inv-1_MP2RAGE.nii.gz'
-    mask: 'tpl-MouseIn/tpl-MouseIn_res-1_desc-brain_mask.nii.gz'
+# Modality map: short key -> filename suffix (the part after sub-X_ses-Y_ and before .nii.gz)
+modalities:
+  TOF: "acq-TOF_run-1_angio"
+  T2w: "run-1_T2w"
