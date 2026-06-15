@@ -10,7 +10,7 @@ targets_by_analysis_level:
 pybids_inputs:
   mri:
     filters:
-      suffix: 'T2starw'
+      suffix: 'T2w'
       extension: 'nii.gz'
       datatype: 'anat'
       reconstruction: false   # exclude rec- files; keep only echo- variants

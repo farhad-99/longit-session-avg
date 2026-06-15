@@ -45,10 +45,10 @@ the command line.
 snakemake \
   --snakefile anatprep/workflow/Snakefile \
   --config \
-    bids_dir=/path/to/bids \
-    output_dir=/path/to/output \
-    template_path=/path/to/initial_mean.nii.gz \
-    template_path_target=/path/to/ABAv3_anat.nii.gz \
+    bids_dir=/nfs/trident3/mri/prado/lecanemab_late/bids \
+    output_dir=/nfs/khan/trainees/ffallahz/lecanemab_late/derivative \
+    template_path=/nfs/khan/trainees/ffallahz/lecanemab_late/derivative/mri-space/initial_mean.nii.gz \
+    template_path_target=/nfs/khan/trainees/ffallahz/allen_custom_template/atlas/tpl-ABAv3_anat.nii.gz \
   --cores all \
   --use-conda \
   -n
