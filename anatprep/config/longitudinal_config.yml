@@ -1,9 +1,0 @@
-# Configuration for within-subject longitudinal session averaging workflow.
-
-bids_dir: null
-output_dir: null
-
-# Modality map: short key -> filename suffix (the part after sub-X_ses-Y_ and before .nii.gz)
-modalities:
-  TOF: "acq-TOF_run-1_angio"
-  T2w: "run-1_T2w"
