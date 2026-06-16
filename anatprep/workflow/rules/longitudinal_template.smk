@@ -36,7 +36,7 @@ rule build_subject_template:
             "anat",
             "sub-{subject}_{modality}_desc-subjectTemplate_anat.nii.gz",
         ),
-    threads: 4
+    threads: workflow.cores
     resources:
         mem_mb=8000,
         runtime=120,
