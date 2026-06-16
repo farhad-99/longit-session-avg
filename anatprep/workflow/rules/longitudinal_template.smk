@@ -8,10 +8,11 @@ Per subject, per modality — aggregates all sessions:
   - Save the subject template
 
 Note: the input function below resolves trimmed session paths from the
-BIDS-discovered session list (get_sessions), rather than glob-ing the
-output directory. A glob over not-yet-created outputs would always
-return an empty list, breaking Snakemake's dependency tracking; deriving
-paths from the discovered session list keeps the DAG correct.
+per-(subject, modality) session list (get_modality_sessions), rather
+than glob-ing the output directory or assuming every session has every
+modality. A glob over not-yet-created outputs would always return an
+empty list, breaking Snakemake's dependency tracking; deriving paths
+from the discovered availability keeps the DAG correct.
 """
 
 
@@ -26,7 +27,7 @@ rule build_subject_template:
                 "anat",
                 f"sub-{wildcards.subject}_ses-{ses}_{wildcards.modality}_desc-trimmed_anat.nii.gz",
             )
-            for ses in get_sessions(wildcards.subject)
+            for ses in get_modality_sessions(wildcards.subject, wildcards.modality)
         ],
     output:
         template=os.path.join(

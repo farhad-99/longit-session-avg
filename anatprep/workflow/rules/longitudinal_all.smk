@@ -10,7 +10,12 @@ This is the default Snakemake target. To target it unambiguously, pass
 
 
 rule all:
-    """Collect all subject templates and coregistered session images."""
+    """Collect all subject templates and coregistered session images.
+
+    Only requests (subject, session, modality) combinations that were
+    actually discovered on disk — not every session necessarily has
+    every modality acquired.
+    """
     input:
         templates=[
             os.path.join(
@@ -21,6 +26,7 @@ rule all:
             )
             for sub in subjects
             for mod in modalities
+            if get_modality_sessions(sub, mod)
         ],
         coregistered=[
             os.path.join(
@@ -31,6 +37,6 @@ rule all:
                 f"sub-{sub}_ses-{ses}_{mod}_space-subjectTemplate_desc-coregistered_anat.nii.gz",
             )
             for sub in subjects
-            for ses in get_sessions(sub)
             for mod in modalities
+            for ses in get_modality_sessions(sub, mod)
         ],

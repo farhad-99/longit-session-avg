@@ -24,9 +24,22 @@ modality_patterns = config["modalities"]
 modalities = list(modality_patterns.keys())
 
 
-def _discover_subject_sessions(bids_dir):
-    """Return dict mapping subject -> sorted list of sessions by globbing BIDS dir."""
+def _discover_availability(bids_dir, modality_patterns):
+    """Discover, per subject and per modality, which sessions actually have
+    that modality's image present.
+
+    Not every session necessarily has every modality acquired, so
+    availability is tracked per (subject, modality) pair rather than
+    assumed uniform across all modalities.
+
+    Returns:
+        subject_sessions: subject -> sorted list of all sessions found (any modality)
+        modality_sessions: (subject, modality) -> sorted list of sessions with that modality
+        modality_path: (subject, session, modality) -> resolved input file path
+    """
     subject_sessions = {}
+    modality_sessions = {}
+    modality_path = {}
     for ses_path in sorted(
         glob.glob(os.path.join(bids_dir, "sub-*", "ses-*", "anat"))
     ):
@@ -34,43 +47,58 @@ def _discover_subject_sessions(bids_dir):
         sub = parts[-3].replace("sub-", "")
         ses = parts[-2].replace("ses-", "")
         subject_sessions.setdefault(sub, []).append(ses)
-    return subject_sessions
+        for mod, keyword in modality_patterns.items():
+            matches = sorted(
+                glob.glob(os.path.join(ses_path, f"sub-{sub}_ses-{ses}_*{keyword}*.nii.gz"))
+            )
+            if not matches:
+                continue
+            if len(matches) > 1:
+                raise ValueError(
+                    f"Multiple files matched modality '{mod}' (keyword '{keyword}') "
+                    f"in {ses_path}: {matches}"
+                )
+            modality_sessions.setdefault((sub, mod), []).append(ses)
+            modality_path[(sub, ses, mod)] = matches[0]
+    return subject_sessions, modality_sessions, modality_path
 
 
-subject_sessions = _discover_subject_sessions(bids_dir)
+subject_sessions, modality_sessions, modality_path = _discover_availability(
+    bids_dir, modality_patterns
+)
 subjects = list(subject_sessions.keys())
 
 print(f"[longitudinal] bids_dir: {bids_dir}")
 print(f"[longitudinal] Discovered {len(subjects)} subject(s): {subjects}")
 for sub, sessions in subject_sessions.items():
     print(f"[longitudinal]   sub-{sub}: {len(sessions)} session(s) {sessions}")
+    for mod in modalities:
+        avail = modality_sessions.get((sub, mod), [])
+        if len(avail) != len(sessions):
+            print(
+                f"[longitudinal]     {mod}: only present in {len(avail)}/{len(sessions)} session(s) {avail}"
+            )
 
 
 def get_sessions(subject):
+    """All sessions discovered for a subject, regardless of modality."""
     return subject_sessions.get(subject, [])
 
 
-def resolve_modality_nii(subject, session, modality):
-    """Glob for the session's image matching the modality keyword.
+def get_modality_sessions(subject, modality):
+    """Sessions for which this specific modality's image was actually found."""
+    return modality_sessions.get((subject, modality), [])
 
-    Tolerant of BIDS entity variations (run numbers, extra acq tags, etc.)
-    since it matches on a substring keyword rather than an exact suffix.
-    """
-    anat_dir = os.path.join(bids_dir, f"sub-{subject}", f"ses-{session}", "anat")
-    keyword = modality_patterns[modality]
-    pattern = os.path.join(anat_dir, f"sub-{subject}_ses-{session}_*{keyword}*.nii.gz")
-    matches = sorted(glob.glob(pattern))
-    if not matches:
+
+def resolve_modality_nii(subject, session, modality):
+    """Look up the input file path discovered for this (subject, session, modality)."""
+    key = (subject, session, modality)
+    if key not in modality_path:
         raise FileNotFoundError(
-            f"No file matching modality '{modality}' (keyword '{keyword}') "
-            f"found in {anat_dir} (pattern: {pattern})"
+            f"No file found for subject={subject} session={session} modality={modality} "
+            f"(keyword '{modality_patterns[modality]}') under {bids_dir}"
         )
-    if len(matches) > 1:
-        raise ValueError(
-            f"Multiple files matched modality '{modality}' (keyword '{keyword}') "
-            f"in {anat_dir}: {matches}"
-        )
-    return matches[0]
+    return modality_path[key]
 
 
 wildcard_constraints:
