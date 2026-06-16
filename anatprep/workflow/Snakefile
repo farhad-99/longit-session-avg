@@ -54,4 +54,7 @@ wildcard_constraints:
     modality="|".join(modalities),
 
 
-include: "rules/longitudinal.smk"
+include: "rules/longitudinal_all.smk"
+include: "rules/longitudinal_trim.smk"
+include: "rules/longitudinal_template.smk"
+include: "rules/longitudinal_coreg.smk"
