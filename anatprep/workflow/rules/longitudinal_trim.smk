@@ -26,8 +26,8 @@ rule trim_and_center:
         ),
     threads: 1
     resources:
-        mem_mb=2000,
-        runtime=15,
+        mem_mb=8000,
+        runtime=30,
     log:
         os.path.join("logs", "trim_and_center", "{subject}_{session}_{modality}.log"),
     run:
