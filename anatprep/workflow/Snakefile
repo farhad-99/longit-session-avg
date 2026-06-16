@@ -90,6 +90,18 @@ def resolve_modality_nii(subject, session, modality):
     return modality_path[key]
 
 
+def trimmed_path(subject, session, modality):
+    """Path to the trimmed/centred session image, kept under its own
+    trimmed_data/ directory rather than alongside the other anat outputs."""
+    return os.path.join(
+        output_dir,
+        "trimmed_data",
+        f"sub-{subject}",
+        f"ses-{session}",
+        f"sub-{subject}_ses-{session}_{modality}_desc-trimmed_anat.nii.gz",
+    )
+
+
 wildcard_constraints:
     modality="|".join(modalities),
 

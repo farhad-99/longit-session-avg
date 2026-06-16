@@ -8,7 +8,8 @@ Per session, per modality:
   - Reset the image origin to the intensity-weighted centre of mass in
     world coordinates (via ants.get_center_of_mass), to normalise variable
     mouse positioning across sessions
-  - Save the result
+  - Save the result under trimmed_data/, kept (not temp) so intermediate
+    trimmed images remain available for inspection after the run
 """
 
 
@@ -17,13 +18,7 @@ rule trim_and_center:
     input:
         nii=lambda wildcards: resolve_modality_nii(wildcards.subject, wildcards.session, wildcards.modality),
     output:
-        nii=os.path.join(
-            output_dir,
-            "sub-{subject}",
-            "ses-{session}",
-            "anat",
-            "sub-{subject}_ses-{session}_{modality}_desc-trimmed_anat.nii.gz",
-        ),
+        nii=lambda wildcards: trimmed_path(wildcards.subject, wildcards.session, wildcards.modality),
     threads: workflow.cores
     resources:
         mem_mb=8000,

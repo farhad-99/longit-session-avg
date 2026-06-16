@@ -20,13 +20,7 @@ rule build_subject_template:
     """Build an unbiased subject template from all trimmed longitudinal sessions."""
     input:
         trimmed=lambda wildcards: [
-            os.path.join(
-                output_dir,
-                f"sub-{wildcards.subject}",
-                f"ses-{ses}",
-                "anat",
-                f"sub-{wildcards.subject}_ses-{ses}_{wildcards.modality}_desc-trimmed_anat.nii.gz",
-            )
+            trimmed_path(wildcards.subject, ses, wildcards.modality)
             for ses in get_modality_sessions(wildcards.subject, wildcards.modality)
         ],
     output:
