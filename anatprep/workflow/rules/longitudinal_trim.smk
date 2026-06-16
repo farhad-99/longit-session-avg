@@ -2,12 +2,12 @@
 Rule: trim_and_center
 
 Per session, per modality:
-  - Load image with nibabel
-  - Compute a foreground mask (non-zero voxels)
-  - Clip intensities at the 10th/90th percentile of foreground voxels
+  - Load image with ANTsPy (ITK-backed, multithreaded)
+  - Clip intensities at the 1st/99th percentile of foreground voxels using
+    ANTs' iMath TruncateIntensity (computed in C++/ITK, not numpy)
   - Reset the image origin to the intensity-weighted centre of mass in
-    world coordinates, to normalise variable mouse positioning across
-    sessions
+    world coordinates (via ants.get_center_of_mass), to normalise variable
+    mouse positioning across sessions
   - Save the result
 """
 
@@ -32,8 +32,10 @@ rule trim_and_center:
         os.path.join("logs", "trim_and_center", "{subject}_{session}_{modality}.log"),
     run:
         import logging
-        import nibabel as nib
-        import numpy as np
+        import os
+
+        os.environ["ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS"] = str(threads)
+        import ants
 
         logger = logging.getLogger(
             f"trim_and_center.{wildcards.subject}.{wildcards.session}.{wildcards.modality}"
@@ -44,34 +46,23 @@ rule trim_and_center:
 
         try:
             log_msg(f"Loading {input.nii}")
-            img = nib.load(input.nii)
-            data = img.get_fdata(dtype=np.float32)
-            affine = img.affine.copy()
+            img = ants.image_read(input.nii)
 
-            fg = data > 0
-            if fg.sum() == 0:
+            fg_mask = ants.threshold_image(img, 1e-6, img.max(), 1, 0)
+            if fg_mask.sum() == 0:
                 raise ValueError(f"No foreground voxels found in {input.nii}")
 
-            fg_vals = data[fg]
-            p10, p90 = np.percentile(fg_vals, [1, 99])
-            log_msg(f"Clipping intensities to [{p10:.2f}, {p90:.2f}]")
-            data = np.clip(data, p10, p90)
-            data[~fg] = 0.0
+            log_msg("Clipping intensities to [1st, 99th] percentile (foreground only)")
+            trimmed = ants.iMath(img, "TruncateIntensity", 0.01, 0.99, 64, fg_mask)
+            trimmed = trimmed * fg_mask
 
-            weights = data.copy()
-            weights[~fg] = 0.0
-            total_weight = weights.sum()
-            coords = np.indices(data.shape).astype(np.float32)
-            com_vox = np.array(
-                [(coords[i] * weights).sum() / total_weight for i in range(3)]
-            )
-            com_world = affine[:3, :3] @ com_vox + affine[:3, 3]
+            com_world = ants.get_center_of_mass(trimmed)
             log_msg(f"COM world coords: {com_world}")
 
-            affine[:3, 3] = -com_world
+            trimmed.set_origin(tuple(-c for c in com_world))
+
             os.makedirs(os.path.dirname(output.nii), exist_ok=True)
-            out_img = nib.Nifti1Image(data, affine, img.header)
-            nib.save(out_img, output.nii)
+            ants.image_write(trimmed, output.nii)
             log_msg(f"Saved trimmed image to {output.nii}")
         except Exception:
             logger.exception("trim_and_center failed")
