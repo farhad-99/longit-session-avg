@@ -24,7 +24,7 @@ rule trim_and_center:
             "anat",
             "sub-{subject}_ses-{session}_{modality}_desc-trimmed_anat.nii.gz",
         ),
-    threads: 1
+    threads: workflow.cores
     resources:
         mem_mb=8000,
         runtime=30,
