@@ -42,33 +42,37 @@ rule trim_and_center:
         logger.handlers = [logging.FileHandler(log[0])]
         log_msg = logger.info
 
-        log_msg(f"Loading {input.nii}")
-        img = nib.load(input.nii)
-        data = img.get_fdata(dtype=np.float32)
-        affine = img.affine.copy()
+        try:
+            log_msg(f"Loading {input.nii}")
+            img = nib.load(input.nii)
+            data = img.get_fdata(dtype=np.float32)
+            affine = img.affine.copy()
 
-        fg = data > 0
-        if fg.sum() == 0:
-            raise ValueError(f"No foreground voxels found in {input.nii}")
+            fg = data > 0
+            if fg.sum() == 0:
+                raise ValueError(f"No foreground voxels found in {input.nii}")
 
-        fg_vals = data[fg]
-        p10, p90 = np.percentile(fg_vals, [5, 95])
-        log_msg(f"Clipping intensities to [{p10:.2f}, {p90:.2f}]")
-        data = np.clip(data, p10, p90)
-        data[~fg] = 0.0
+            fg_vals = data[fg]
+            p10, p90 = np.percentile(fg_vals, [5, 95])
+            log_msg(f"Clipping intensities to [{p10:.2f}, {p90:.2f}]")
+            data = np.clip(data, p10, p90)
+            data[~fg] = 0.0
 
-        weights = data.copy()
-        weights[~fg] = 0.0
-        total_weight = weights.sum()
-        coords = np.indices(data.shape).astype(np.float32)
-        com_vox = np.array(
-            [(coords[i] * weights).sum() / total_weight for i in range(3)]
-        )
-        com_world = affine[:3, :3] @ com_vox + affine[:3, 3]
-        log_msg(f"COM world coords: {com_world}")
+            weights = data.copy()
+            weights[~fg] = 0.0
+            total_weight = weights.sum()
+            coords = np.indices(data.shape).astype(np.float32)
+            com_vox = np.array(
+                [(coords[i] * weights).sum() / total_weight for i in range(3)]
+            )
+            com_world = affine[:3, :3] @ com_vox + affine[:3, 3]
+            log_msg(f"COM world coords: {com_world}")
 
-        affine[:3, 3] = -com_world
-        os.makedirs(os.path.dirname(output.nii), exist_ok=True)
-        out_img = nib.Nifti1Image(data, affine, img.header)
-        nib.save(out_img, output.nii)
-        log_msg(f"Saved trimmed image to {output.nii}")
+            affine[:3, 3] = -com_world
+            os.makedirs(os.path.dirname(output.nii), exist_ok=True)
+            out_img = nib.Nifti1Image(data, affine, img.header)
+            nib.save(out_img, output.nii)
+            log_msg(f"Saved trimmed image to {output.nii}")
+        except Exception:
+            logger.exception("trim_and_center failed")
+            raise

@@ -63,21 +63,25 @@ rule register_sessions_to_template:
 
         log_msg(f"Registering {input.moving} -> {input.fixed}")
 
-        fixed = ants.image_read(input.fixed)
-        moving = ants.image_read(input.moving)
+        try:
+            fixed = ants.image_read(input.fixed)
+            moving = ants.image_read(input.moving)
 
-        result = ants.registration(
-            fixed=fixed,
-            moving=moving,
-            type_of_transform="Rigid",
-            verbose=False,
-        )
+            result = ants.registration(
+                fixed=fixed,
+                moving=moving,
+                type_of_transform="Rigid",
+                verbose=False,
+            )
 
-        os.makedirs(os.path.dirname(output.xfm), exist_ok=True)
-        os.makedirs(os.path.dirname(output.warped), exist_ok=True)
+            os.makedirs(os.path.dirname(output.xfm), exist_ok=True)
+            os.makedirs(os.path.dirname(output.warped), exist_ok=True)
 
-        # ANTs rigid registration produces a single affine .mat
-        shutil.copy(result["fwdtransforms"][0], output.xfm)
-        ants.image_write(result["warpedmovout"], output.warped)
-        log_msg(f"Transform saved to {output.xfm}")
-        log_msg(f"Warped image saved to {output.warped}")
+            # ANTs rigid registration produces a single affine .mat
+            shutil.copy(result["fwdtransforms"][0], output.xfm)
+            ants.image_write(result["warpedmovout"], output.warped)
+            log_msg(f"Transform saved to {output.xfm}")
+            log_msg(f"Warped image saved to {output.warped}")
+        except Exception:
+            logger.exception("register_sessions_to_template failed")
+            raise
