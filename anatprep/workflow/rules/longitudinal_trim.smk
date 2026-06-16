@@ -15,13 +15,7 @@ Per session, per modality:
 rule trim_and_center:
     """Clip hot/cold voxels and re-centre the image origin to intensity-weighted COM."""
     input:
-        nii=lambda wildcards: os.path.join(
-            bids_dir,
-            f"sub-{wildcards.subject}",
-            f"ses-{wildcards.session}",
-            "anat",
-            f"sub-{wildcards.subject}_ses-{wildcards.session}_{modality_patterns[wildcards.modality]}.nii.gz",
-        ),
+        nii=lambda wildcards: resolve_modality_nii(wildcards.subject, wildcards.session, wildcards.modality),
     output:
         nii=os.path.join(
             output_dir,

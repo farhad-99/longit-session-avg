@@ -50,6 +50,29 @@ def get_sessions(subject):
     return subject_sessions.get(subject, [])
 
 
+def resolve_modality_nii(subject, session, modality):
+    """Glob for the session's image matching the modality keyword.
+
+    Tolerant of BIDS entity variations (run numbers, extra acq tags, etc.)
+    since it matches on a substring keyword rather than an exact suffix.
+    """
+    anat_dir = os.path.join(bids_dir, f"sub-{subject}", f"ses-{session}", "anat")
+    keyword = modality_patterns[modality]
+    pattern = os.path.join(anat_dir, f"sub-{subject}_ses-{session}_*{keyword}*.nii.gz")
+    matches = sorted(glob.glob(pattern))
+    if not matches:
+        raise FileNotFoundError(
+            f"No file matching modality '{modality}' (keyword '{keyword}') "
+            f"found in {anat_dir} (pattern: {pattern})"
+        )
+    if len(matches) > 1:
+        raise ValueError(
+            f"Multiple files matched modality '{modality}' (keyword '{keyword}') "
+            f"in {anat_dir}: {matches}"
+        )
+    return matches[0]
+
+
 wildcard_constraints:
     modality="|".join(modalities),
 

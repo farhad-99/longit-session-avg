@@ -3,7 +3,9 @@
 bids_dir: null
 output_dir: null
 
-# Modality map: short key -> filename suffix (the part after sub-X_ses-Y_ and before .nii.gz)
+# Modality map: short key -> keyword used to glob-match the session's filename.
+# Matched as sub-{subject}_ses-{session}_*{keyword}*.nii.gz, so this tolerates
+# variations in run number / extra BIDS entities across the dataset.
 modalities:
-  TOF: "acq-TOF_run-1_angio"
-  T2w: "run-1_T2w"
+  TOF: "TOF"
+  T2w: "T2w"
