@@ -52,7 +52,7 @@ rule trim_and_center:
             raise ValueError(f"No foreground voxels found in {input.nii}")
 
         fg_vals = data[fg]
-        p10, p90 = np.percentile(fg_vals, [10, 90])
+        p10, p90 = np.percentile(fg_vals, [5, 95])
         log_msg(f"Clipping intensities to [{p10:.2f}, {p90:.2f}]")
         data = np.clip(data, p10, p90)
         data[~fg] = 0.0
