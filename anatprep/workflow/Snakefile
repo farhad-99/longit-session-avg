@@ -68,17 +68,6 @@ subject_sessions, modality_sessions, modality_path = _discover_availability(
 )
 subjects = list(subject_sessions.keys())
 
-print(f"[longitudinal] bids_dir: {bids_dir}")
-print(f"[longitudinal] Discovered {len(subjects)} subject(s): {subjects}")
-for sub, sessions in subject_sessions.items():
-    print(f"[longitudinal]   sub-{sub}: {len(sessions)} session(s) {sessions}")
-    for mod in modalities:
-        avail = modality_sessions.get((sub, mod), [])
-        if len(avail) != len(sessions):
-            print(
-                f"[longitudinal]     {mod}: only present in {len(avail)}/{len(sessions)} session(s) {avail}"
-            )
-
 
 def get_sessions(subject):
     """All sessions discovered for a subject, regardless of modality."""
