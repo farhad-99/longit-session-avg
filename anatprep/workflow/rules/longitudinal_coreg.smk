@@ -39,7 +39,7 @@ rule register_sessions_to_template:
             "anat",
             "sub-{subject}_ses-{session}_{modality}_space-subjectTemplate_desc-coregistered_anat.nii.gz",
         ),
-    threads: 1
+    threads: workflow.cores
     resources:
         mem_mb=4000,
         runtime=30,
@@ -51,7 +51,10 @@ rule register_sessions_to_template:
         ),
     run:
         import logging
+        import os
         import shutil
+
+        os.environ["ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS"] = str(threads)
         import ants
 
         logger = logging.getLogger(

@@ -44,7 +44,9 @@ rule build_subject_template:
         os.path.join("logs", "build_subject_template", "{subject}_{modality}.log"),
     run:
         import logging
-        import tempfile
+        import os
+
+        os.environ["ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS"] = str(threads)
         import ants
 
         logger = logging.getLogger(
@@ -60,15 +62,13 @@ rule build_subject_template:
         try:
             image_list = [ants.image_read(f) for f in input.trimmed]
 
-            with tempfile.TemporaryDirectory() as tmpdir:
-                template = ants.build_template(
-                    image_list=image_list,
-                    iterations=3,
-                    gradient_step=0.2,
-                    blending_weight=0.75,
-                    verbose=True,
-                    outprefix=os.path.join(tmpdir, "template_"),
-                )
+            template = ants.build_template(
+                image_list=image_list,
+                iterations=3,
+                gradient_step=0.2,
+                blending_weight=0.75,
+                verbose=True,
+            )
 
             os.makedirs(os.path.dirname(output.template), exist_ok=True)
             ants.image_write(template, output.template)
