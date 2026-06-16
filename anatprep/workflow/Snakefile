@@ -1,0 +1,112 @@
+"""
+Within-subject longitudinal session averaging workflow.
+
+Implements trim → subject-template → session coregistration for two MRI
+modalities: TOF angiography and T2w.
+"""
+
+import os
+import glob
+
+
+_config_path = os.path.normpath(
+    os.path.join(workflow.basedir, "..", "config", "snakebids.yml")
+)
+print(f"[longitudinal] config: {_config_path}")
+configfile: _config_path
+
+
+bids_dir = config["bids_dir"]
+output_dir = config["output_dir"]
+
+# {"TOF": "acq-TOF_run-1_angio", "T2w": "run-1_T2w"}
+modality_patterns = config["modalities"]
+modalities = list(modality_patterns.keys())
+
+
+def _discover_availability(bids_dir, modality_patterns):
+    """Discover, per subject and per modality, which sessions actually have
+    that modality's image present.
+
+    Not every session necessarily has every modality acquired, so
+    availability is tracked per (subject, modality) pair rather than
+    assumed uniform across all modalities.
+
+    Returns:
+        subject_sessions: subject -> sorted list of all sessions found (any modality)
+        modality_sessions: (subject, modality) -> sorted list of sessions with that modality
+        modality_path: (subject, session, modality) -> resolved input file path
+    """
+    subject_sessions = {}
+    modality_sessions = {}
+    modality_path = {}
+    for ses_path in sorted(
+        glob.glob(os.path.join(bids_dir, "sub-*", "ses-*", "anat"))
+    ):
+        parts = ses_path.split(os.sep)
+        sub = parts[-3].replace("sub-", "")
+        ses = parts[-2].replace("ses-", "")
+        subject_sessions.setdefault(sub, []).append(ses)
+        for mod, keyword in modality_patterns.items():
+            matches = sorted(
+                glob.glob(os.path.join(ses_path, f"sub-{sub}_ses-{ses}_*{keyword}*.nii.gz"))
+            )
+            if not matches:
+                continue
+            if len(matches) > 1:
+                raise ValueError(
+                    f"Multiple files matched modality '{mod}' (keyword '{keyword}') "
+                    f"in {ses_path}: {matches}"
+                )
+            modality_sessions.setdefault((sub, mod), []).append(ses)
+            modality_path[(sub, ses, mod)] = matches[0]
+    return subject_sessions, modality_sessions, modality_path
+
+
+subject_sessions, modality_sessions, modality_path = _discover_availability(
+    bids_dir, modality_patterns
+)
+subjects = list(subject_sessions.keys())
+
+
+def get_sessions(subject):
+    """All sessions discovered for a subject, regardless of modality."""
+    return subject_sessions.get(subject, [])
+
+
+def get_modality_sessions(subject, modality):
+    """Sessions for which this specific modality's image was actually found."""
+    return modality_sessions.get((subject, modality), [])
+
+
+def resolve_modality_nii(subject, session, modality):
+    """Look up the input file path discovered for this (subject, session, modality)."""
+    key = (subject, session, modality)
+    if key not in modality_path:
+        raise FileNotFoundError(
+            f"No file found for subject={subject} session={session} modality={modality} "
+            f"(keyword '{modality_patterns[modality]}') under {bids_dir}"
+        )
+    return modality_path[key]
+
+
+def trimmed_path(subject, session, modality):
+    """Path to the trimmed/centred session image, kept under its own
+    trimmed_data/ directory rather than alongside the other anat outputs."""
+    return os.path.join(
+        output_dir,
+        "trimmed_data",
+        f"sub-{subject}",
+        f"ses-{session}",
+        f"sub-{subject}_ses-{session}_{modality}_desc-trimmed_anat.nii.gz",
+    )
+
+
+wildcard_constraints:
+    modality="|".join(modalities),
+
+
+include: "rules/longitudinal_all.smk"
+include: "rules/longitudinal_trim.smk"
+include: "rules/longitudinal_template.smk"
+include: "rules/longitudinal_coreg.smk"

@@ -1,0 +1,11 @@
+# Configuration for within-subject longitudinal session averaging workflow.
+
+bids_dir: null
+output_dir: null
+
+# Modality map: short key -> keyword used to glob-match the session's filename.
+# Matched as sub-{subject}_ses-{session}_*{keyword}*.nii.gz, so this tolerates
+# variations in run number / extra BIDS entities across the dataset.
+modalities:
+  TOF: "TOF"
+  T2w: "T2w"
