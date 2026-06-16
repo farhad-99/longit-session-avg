@@ -57,18 +57,22 @@ rule build_subject_template:
         log_msg(f"Building template for sub-{wildcards.subject} {wildcards.modality}")
         log_msg(f"Input images: {input.trimmed}")
 
-        image_list = [ants.image_read(f) for f in input.trimmed]
+        try:
+            image_list = [ants.image_read(f) for f in input.trimmed]
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            template = ants.build_template(
-                image_list=image_list,
-                iterations=3,
-                gradient_step=0.2,
-                blending_weight=0.75,
-                verbose=True,
-                outprefix=os.path.join(tmpdir, "template_"),
-            )
+            with tempfile.TemporaryDirectory() as tmpdir:
+                template = ants.build_template(
+                    image_list=image_list,
+                    iterations=3,
+                    gradient_step=0.2,
+                    blending_weight=0.75,
+                    verbose=True,
+                    outprefix=os.path.join(tmpdir, "template_"),
+                )
 
-        os.makedirs(os.path.dirname(output.template), exist_ok=True)
-        ants.image_write(template, output.template)
-        log_msg(f"Saved subject template to {output.template}")
+            os.makedirs(os.path.dirname(output.template), exist_ok=True)
+            ants.image_write(template, output.template)
+            log_msg(f"Saved subject template to {output.template}")
+        except Exception:
+            logger.exception("build_subject_template failed")
+            raise
