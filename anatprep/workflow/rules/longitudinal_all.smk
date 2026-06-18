@@ -1,7 +1,8 @@
 """
 Rule: all (terminal rule)
 
-Requests all subject template files and all coregistered session images
+Requests all subject template files, coregistered session images,
+deformation fields, Jacobian determinant maps, and QC PDFs
 for both modalities across all subjects and sessions.
 
 This is the default Snakemake target. To target it unambiguously, pass
@@ -10,7 +11,7 @@ This is the default Snakemake target. To target it unambiguously, pass
 
 
 rule all:
-    """Collect all subject templates and coregistered session images.
+    """Collect all outputs: templates, coregistered images, Jacobians, warps, QC PDFs.
 
     Only requests (subject, session, modality) combinations that were
     actually discovered on disk — not every session necessarily has
@@ -40,3 +41,39 @@ rule all:
             for mod in modalities
             for ses in get_modality_sessions(sub, mod)
         ],
+        warps=[
+            os.path.join(
+                output_dir,
+                f"sub-{sub}",
+                f"ses-{ses}",
+                "xfm",
+                f"sub-{sub}_ses-{ses}_{mod}_from-session_to-subjectTemplate_desc-warp_anat.nii.gz",
+            )
+            for sub in subjects
+            for mod in modalities
+            for ses in get_modality_sessions(sub, mod)
+        ],
+        jacobians=[
+            os.path.join(
+                output_dir,
+                f"sub-{sub}",
+                f"ses-{ses}",
+                "anat",
+                f"sub-{sub}_ses-{ses}_{mod}_space-subjectTemplate_desc-jacobian_anat.nii.gz",
+            )
+            for sub in subjects
+            for mod in modalities
+            for ses in get_modality_sessions(sub, mod)
+        ],
+        qc_pdfs=[
+            os.path.join(
+                output_dir,
+                f"sub-{sub}",
+                "anat",
+                f"sub-{sub}_{mod}_desc-qc_anat.pdf",
+            )
+            for sub in subjects
+            for mod in modalities
+            if get_modality_sessions(sub, mod)
+        ],
+
